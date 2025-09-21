@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
 
-// Les styles sont inclus directement pour la simplicité, vous pouvez les externaliser
 const styles = {
   formContainer: {
     maxWidth: "500px",
     margin: "20px auto",
     padding: "25px",
-    // Utilisation des variables CSS
     border: "1px solid var(--border-color)",
     borderRadius: "8px",
     boxShadow: "0 4px 8px rgba(0,0,0,0.05)",
     backgroundColor: "var(--card-background)",
-    color: "var(--text-color)", // Pour le texte général du conteneur
+    color: "var(--text-color)",
   },
   formGroup: {
     marginBottom: "15px",
@@ -20,29 +18,27 @@ const styles = {
     display: "block",
     marginBottom: "5px",
     fontWeight: "bold",
-    color: "var(--text-color)", // Utilisation de la variable
+    color: "var(--text-color)",
   },
   input: {
     width: "100%",
     padding: "10px",
-    // Utilisation des variables CSS
     border: "1px solid var(--border-color)",
     borderRadius: "4px",
     boxSizing: "border-box",
     fontSize: "16px",
-    backgroundColor: "var(--background-color)", // Fond de l'input
-    color: "var(--text-color)", // Texte de l'input
+    backgroundColor: "var(--background-color)",
+    color: "var(--text-color)",
   },
   select: {
     width: "100%",
     padding: "10px",
-    // Utilisation des variables CSS
     border: "1px solid var(--border-color)",
     borderRadius: "4px",
     boxSizing: "border-box",
     fontSize: "16px",
-    backgroundColor: "var(--background-color)", // Fond du select
-    color: "var(--text-color)", // Texte du select
+    backgroundColor: "var(--background-color)",
+    color: "var(--text-color)",
   },
   checkboxContainer: {
     display: "flex",
@@ -53,12 +49,9 @@ const styles = {
     marginRight: "10px",
     width: "20px",
     height: "20px",
-    // Peut nécessiter des styles spécifiques pour bien s'adapter au dark mode
-    // ou utiliser une librairie de styles si les inputs par défaut ne changent pas bien.
   },
   button: {
     padding: "12px 20px",
-    // Utilisation des variables CSS pour les boutons primaires
     backgroundColor: "var(--primary-button-bg)",
     color: "var(--primary-button-text)",
     border: "none",
@@ -106,22 +99,37 @@ const banks = [
   "HSBC ALGERIA",
   "AL SALAM BANK ALGERIA",
 ];
+
+// Génère la liste des années de 2020 à l'année en cours + 1
+const generateYears = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let i = 2020; i <= currentYear + 1; i++) {
+    years.push(i.toString());
+  }
+  return years;
+};
+const years = generateYears();
+
 function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
   const [formData, setFormData] = useState({
     kompassId: "",
     clientName: "",
-    paymentMethod: "Cash", // Valeur par défaut
+    paymentMethod: "Cash",
     bankName: banks[0],
     isFullPayment: false,
     amountDue: "",
     amountPaid: "",
     agentName: "",
-    paymentDate: new Date().toISOString().split("T")[0], // Date du jour au format YYYY-MM-DD
+    paymentDate: new Date().toISOString().split("T")[0],
+    // NOUVEAUX CHAMPS
+    editionYear: new Date().getFullYear().toString(),
+    invoiceDate: "",
+    paymentTotalAmount: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Utilisez useEffect pour charger les données initiales en mode édition
   useEffect(() => {
     if (isEditMode && initialData) {
       setFormData({
@@ -133,10 +141,16 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
         amountDue: initialData.amountDue || "",
         amountPaid: initialData.amountPaid || "",
         agentName: initialData.agentName || "",
-        // Formatage de la date pour l'input type="date"
         paymentDate: initialData.paymentDate
           ? new Date(initialData.paymentDate).toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0],
+        // NOUVEAUX CHAMPS
+        editionYear:
+          initialData.editionYear || new Date().getFullYear().toString(),
+        invoiceDate: initialData.invoiceDate
+          ? new Date(initialData.invoiceDate).toISOString().split("T")[0]
+          : "",
+        paymentTotalAmount: initialData.paymentTotalAmount || "",
       });
     }
   }, [isEditMode, initialData]);
@@ -155,14 +169,17 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
     setSuccess("");
 
     try {
-      // S'assurer que les montants sont des nombres
       const dataToSend = {
         ...formData,
-        amountDue: Number(formData.amountDue),
-        amountPaid: Number(formData.amountPaid),
+        amountDue: formData.amountDue === "" ? 0 : Number(formData.amountDue),
+        amountPaid:
+          formData.amountPaid === "" ? 0 : Number(formData.amountPaid),
+        paymentTotalAmount:
+          formData.paymentTotalAmount === ""
+            ? 0
+            : Number(formData.paymentTotalAmount),
       };
 
-      // Appelle la fonction onSubmit passée par la page parente
       await onSubmit(dataToSend);
       setSuccess(
         isEditMode
@@ -171,7 +188,6 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
       );
 
       if (!isEditMode) {
-        // Réinitialiser le formulaire après création
         setFormData({
           kompassId: "",
           clientName: "",
@@ -182,6 +198,9 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
           amountPaid: "",
           agentName: "",
           paymentDate: new Date().toISOString().split("T")[0],
+          editionYear: new Date().getFullYear().toString(),
+          invoiceDate: "",
+          paymentTotalAmount: "",
         });
       }
     } catch (err) {
@@ -191,8 +210,14 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
   };
 
   return (
-    <div style={styles.formContainer}>
-      <h2 style={{ textAlign: "center", color: "#333", marginBottom: "20px" }}>
+    <div style={styles.formContainer} className="container">
+      <h2
+        style={{
+          textAlign: "center",
+          color: "var(--text-color)",
+          marginBottom: "20px",
+        }}
+      >
         {isEditMode
           ? "Modifier le Paiement"
           : "Enregistrer un Nouveau Paiement"}
@@ -209,11 +234,11 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
             value={formData.kompassId}
             onChange={handleChange}
             required
-            readOnly={isEditMode} // En mode édition, l'ID de l'entreprise est généralement non modifiable
+            readOnly={isEditMode}
             style={{
               ...styles.input,
               ...(isEditMode && {
-                backgroundColor: "#f0f0f0",
+                backgroundColor: "var(--background-color)",
                 cursor: "not-allowed",
               }),
             }}
@@ -250,11 +275,10 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
             <option value="Cash">Cash</option>
             <option value="Bank Transfer">Virement Bancaire</option>
             <option value="Check">Chèque</option>
-            <option value="Versement">Versement</option>
+            <option value="Mobile Money">Mobile Money</option>
           </select>
         </div>
 
-        {/* NOUVEAU CHAMP : Banque */}
         <div style={styles.formGroup}>
           <label htmlFor="bankName" style={styles.label}>
             Banque :
@@ -273,6 +297,42 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* NOUVEAU CHAMP : Année de l'édition */}
+        <div style={styles.formGroup}>
+          <label htmlFor="editionYear" style={styles.label}>
+            Année de l'Édition :
+          </label>
+          <select
+            id="editionYear"
+            name="editionYear"
+            value={formData.editionYear}
+            onChange={handleChange}
+            required
+            style={styles.select}
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* NOUVEAU CHAMP : Date de facture */}
+        <div style={styles.formGroup}>
+          <label htmlFor="invoiceDate" style={styles.label}>
+            Date de Facture :
+          </label>
+          <input
+            type="date"
+            id="invoiceDate"
+            name="invoiceDate"
+            value={formData.invoiceDate}
+            onChange={handleChange}
+            style={styles.input}
+          />
         </div>
 
         <div style={styles.checkboxContainer}>
@@ -323,6 +383,23 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
           />
         </div>
 
+        {/* NOUVEAU CHAMP : Montant total du paiement */}
+        <div style={styles.formGroup}>
+          <label htmlFor="paymentTotalAmount" style={styles.label}>
+            Montant Total du Paiement :
+          </label>
+          <input
+            type="number"
+            id="paymentTotalAmount"
+            name="paymentTotalAmount"
+            value={formData.paymentTotalAmount}
+            onChange={handleChange}
+            min="0"
+            step="0.01"
+            style={styles.input}
+          />
+        </div>
+
         <div style={styles.formGroup}>
           <label htmlFor="agentName" style={styles.label}>
             Nom de l'Agent :
@@ -349,7 +426,7 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
             value={formData.paymentDate}
             onChange={handleChange}
             required
-            style={styles.input}
+            style={styles.input} 
           />
         </div>
 

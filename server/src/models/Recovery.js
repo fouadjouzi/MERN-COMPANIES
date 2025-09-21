@@ -2,11 +2,9 @@ const mongoose = require("mongoose");
 
 const recoverySchema = mongoose.Schema(
   {
-    // L'ID de l'entreprise, saisi par l'utilisateur
     kompassId: {
       type: String,
       required: [true, "Le KOMPASS ID de l'entreprise est requis"],
-      // Retire unique: true car plusieurs recouvrements peuvent avoir le même ID d'entreprise
       trim: true,
     },
     clientName: {
@@ -21,8 +19,16 @@ const recoverySchema = mongoose.Schema(
     },
     bankName: {
       type: String,
-      required: [true, "Le nom de la banque est requis"], // Rendre obligatoire ou non selon votre besoin
+      required: [true, "Le nom de la banque est requis"],
       trim: true,
+    },
+    editionYear: {
+      type: String,
+      required: [true, "L'année d'édition est requise"],
+    },
+    invoiceDate: {
+      type: Date,
+      required: false,
     },
     isFullPayment: {
       type: Boolean,
@@ -37,6 +43,11 @@ const recoverySchema = mongoose.Schema(
     amountPaid: {
       type: Number,
       required: [true, "Le montant payé est requis"],
+      min: 0,
+    },
+    paymentTotalAmount: {
+      type: Number,
+      required: false,
       min: 0,
     },
     agentName: {

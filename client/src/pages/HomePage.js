@@ -192,35 +192,43 @@ function HomePage() {
         ) : (
           <table style={styles.table}>
             <thead>
-              {/* CORRECTION ICI : Pas d'espaces/retours à la ligne entre <tr> et <th>, ni entre les <th> */}
               <tr>
                 <th style={styles.th}>KOMPASS ID</th>
                 <th style={styles.th}>Client</th>
                 <th style={styles.th}>Banque</th>
                 <th style={styles.th}>Montant Dû</th>
                 <th style={styles.th}>Montant Payé</th>
+                <th style={styles.th}>Montant Total</th>
                 <th style={styles.th}>Agent</th>
                 <th style={styles.th}>Paiement Total</th>
-                <th style={styles.th}>Date</th>
+                <th style={styles.th}>Date Facture</th>
+                <th style={styles.th}>Date Paiement</th>
+                <th style={styles.th}>Année d'Édition</th>
                 {isAdmin && <th style={styles.th}>Actions</th>}
               </tr>
             </thead>
             <tbody>
               {recoveries.map((recovery) => (
                 <tr key={recovery._id}>
-                  {/* CORRECTION ICI : Pas d'espaces/retours à la ligne entre <tr> et <td>, ni entre les <td> */}
                   <td style={styles.td}>{recovery.kompassId}</td>
                   <td style={styles.td}>{recovery.clientName}</td>
                   <td style={styles.td}>{recovery.bankName}</td>
                   <td style={styles.td}>{recovery.amountDue}</td>
                   <td style={styles.td}>{recovery.amountPaid}</td>
+                  <td style={styles.td}>{recovery.paymentTotalAmount}</td>
                   <td style={styles.td}>{recovery.agentName}</td>
                   <td style={styles.td}>
                     {recovery.isFullPayment ? "Oui" : "Non"}
                   </td>
                   <td style={styles.td}>
+                    {recovery.invoiceDate
+                      ? new Date(recovery.invoiceDate).toLocaleDateString()
+                      : "N/A"}
+                  </td>
+                  <td style={styles.td}>
                     {new Date(recovery.paymentDate).toLocaleDateString()}
                   </td>
+                  <td style={styles.td}>{recovery.editionYear}</td>
                   {isAdmin && (
                     <td style={styles.td}>
                       <div style={styles.buttonGroup}>
