@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 
+// Styles (incluant readOnlyInput pour le Solde)
 const styles = {
   formContainer: {
     maxWidth: "500px",
@@ -62,6 +63,16 @@ const styles = {
     transition: "background-color 0.2s",
     width: "100%",
   },
+  readOnlyInput: {
+    backgroundColor: "var(--background-color)",
+    color: "var(--text-color)",
+    border: "1px solid var(--border-color)",
+    borderRadius: "4px",
+    padding: "10px",
+    width: "100%",
+    boxSizing: "border-box",
+    fontWeight: "bold",
+  },
   error: {
     color: "red",
     marginTop: "10px",
@@ -76,6 +87,7 @@ const styles = {
   },
 };
 
+// Listes de données
 const banks = [
   "BEA",
   "BNA",
@@ -100,7 +112,6 @@ const banks = [
   "AL SALAM BANK ALGERIA",
 ];
 
-// Génère la liste des années de 2020 à l'année en cours + 1
 const generateYears = () => {
   const currentYear = new Date().getFullYear();
   const years = [];
@@ -118,17 +129,25 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
     paymentMethod: "Cash",
     bankName: banks[0],
     isFullPayment: false,
-    amountDue: "",
+    amountDue: "", // Montant Total Dû
     amountPaid: "",
     agentName: "",
     paymentDate: new Date().toISOString().split("T")[0],
-    // NOUVEAUX CHAMPS
     editionYear: new Date().getFullYear().toString(),
     invoiceDate: "",
     paymentTotalAmount: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // CALCUL: Solde (Montant Dû - Montant Payé)
+  const solde = (() => {
+    const total = Number(formData.amountDue);
+    const paid = Number(formData.amountPaid);
+    if (isNaN(total) || isNaN(paid)) return "N/A";
+    const difference = total - paid;
+    return difference.toFixed(2);
+  })();
 
   useEffect(() => {
     if (isEditMode && initialData) {
@@ -144,7 +163,6 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
         paymentDate: initialData.paymentDate
           ? new Date(initialData.paymentDate).toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0],
-        // NOUVEAUX CHAMPS
         editionYear:
           initialData.editionYear || new Date().getFullYear().toString(),
         invoiceDate: initialData.invoiceDate
@@ -299,7 +317,6 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
           </select>
         </div>
 
-        {/* NOUVEAU CHAMP : Année de l'édition */}
         <div style={styles.formGroup}>
           <label htmlFor="editionYear" style={styles.label}>
             Année de l'Édition :
@@ -320,7 +337,6 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
           </select>
         </div>
 
-        {/* NOUVEAU CHAMP : Date de facture */}
         <div style={styles.formGroup}>
           <label htmlFor="invoiceDate" style={styles.label}>
             Date de Facture :
@@ -335,23 +351,10 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
           />
         </div>
 
-        <div style={styles.checkboxContainer}>
-          <input
-            type="checkbox"
-            id="isFullPayment"
-            name="isFullPayment"
-            checked={formData.isFullPayment}
-            onChange={handleChange}
-            style={styles.checkboxInput}
-          />
-          <label htmlFor="isFullPayment" style={styles.label}>
-            Paiement Total
-          </label>
-        </div>
-
+        {/* MONTANT TOTAL À PAYER (amountDue) */}
         <div style={styles.formGroup}>
           <label htmlFor="amountDue" style={styles.label}>
-            Montant Dû :
+            Montant Total Dû :
           </label>
           <input
             type="number"
@@ -366,6 +369,7 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
           />
         </div>
 
+        {/* MONTANT PAYÉ */}
         <div style={styles.formGroup}>
           <label htmlFor="amountPaid" style={styles.label}>
             Montant Payé :
@@ -383,7 +387,23 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
           />
         </div>
 
-        {/* NOUVEAU CHAMP : Montant total du paiement */}
+        {/* SOLDE RESTANT (CALCULÉ) */}
+        <div style={styles.formGroup}>
+          <label htmlFor="solde" style={styles.label}>
+            Solde Restant :
+          </label>
+          <input
+            type="text"
+            id="solde"
+            value={`${solde} DA`}
+            readOnly
+            style={{
+              ...styles.readOnlyInput,
+              backgroundColor: "var(--background-color)",
+            }}
+          />
+        </div>
+
         <div style={styles.formGroup}>
           <label htmlFor="paymentTotalAmount" style={styles.label}>
             Montant Total du Paiement :
@@ -398,6 +418,20 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
             step="0.01"
             style={styles.input}
           />
+        </div>
+
+        <div style={styles.checkboxContainer}>
+          <input
+            type="checkbox"
+            id="isFullPayment"
+            name="isFullPayment"
+            checked={formData.isFullPayment}
+            onChange={handleChange}
+            style={styles.checkboxInput}
+          />
+          <label htmlFor="isFullPayment" style={styles.label}>
+            Paiement Total
+          </label>
         </div>
 
         <div style={styles.formGroup}>
@@ -426,7 +460,7 @@ function RecoveryForm({ onSubmit, initialData = {}, isEditMode = false }) {
             value={formData.paymentDate}
             onChange={handleChange}
             required
-            style={styles.input} 
+            style={styles.input}
           />
         </div>
 

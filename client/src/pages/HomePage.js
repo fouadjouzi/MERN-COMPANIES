@@ -4,16 +4,12 @@ import RecoveryForm from "../components/RecoveryForm";
 import recoveryService from "../services/recoveryService";
 import { Link, useNavigate } from "react-router-dom";
 
-// Styles (peut être externalisé)
+// Styles
 const styles = {
   container: {
-    maxWidth: "1000px",
-    margin: "20px auto",
     padding: "20px",
-    backgroundColor: "var(--card-background)",
-    border: "1px solid var(--border-color)",
-    borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    maxWidth: "1200px",
+    margin: "0 auto",
   },
   heading: {
     textAlign: "center",
@@ -22,62 +18,52 @@ const styles = {
   },
   userInfo: {
     marginBottom: "20px",
-    padding: "10px",
-    backgroundColor: "var(--background-color)",
-    borderRadius: "5px",
-    border: "1px solid var(--border-color)",
     textAlign: "center",
   },
   logoutButton: {
-    padding: "8px 15px",
-    backgroundColor: "var(--secondary-button-bg)",
-    color: "var(--secondary-button-text)",
+    background: "var(--danger-color)",
+    color: "#fff",
     border: "none",
-    borderRadius: "4px",
+    padding: "10px 15px",
     cursor: "pointer",
-    fontSize: "14px",
-    marginLeft: "10px",
+    borderRadius: "5px",
+    marginTop: "10px",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    marginTop: "20px",
-    color: "var(--text-color)",
   },
   th: {
-    backgroundColor: "var(--background-color)",
     border: "1px solid var(--border-color)",
     padding: "10px",
-    textAlign: "left",
+    background: "var(--primary-color)",
+    color: "#fff",
   },
   td: {
     border: "1px solid var(--border-color)",
     padding: "10px",
-    textAlign: "left",
+    textAlign: "center",
   },
   buttonGroup: {
     display: "flex",
-    gap: "5px",
+    gap: "10px",
     justifyContent: "center",
-    alignItems: "center",
   },
   editButton: {
-    padding: "6px 10px",
-    backgroundColor: "var(--primary-button-bg)",
-    color: "var(--primary-button-text)",
+    background: "var(--primary-color)",
+    color: "#fff",
     border: "none",
-    borderRadius: "3px",
+    padding: "8px 12px",
     cursor: "pointer",
-    fontSize: "12px",
+    borderRadius: "5px",
   },
   deleteButton: {
-    padding: "6px 10px",
-    backgroundColor: "var(--secondary-button-bg)",
-    color: "var(--secondary-button-text)",
+    background: "var(--danger-color)",
+    color: "#fff",
     border: "none",
-    borderRadius: "3px",
+    padding: "8px 12px",
     cursor: "pointer",
-    fontSize: "12px",
+    borderRadius: "5px",
   },
 };
 
@@ -88,60 +74,44 @@ function HomePage() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Fonction pour charger les paiements de recouvrement
-  const fetchRecoveries = async () => {
-    setLoading(true);
-    setError("");
+  // 📌 Récupération des paiements
+  async function fetchRecoveries() {
     try {
-      const data = await recoveryService.getRecoveries();
+      setLoading(true);
+      const data = await recoveryService.getRecoveries(); // ✅ corrigé ici
       setRecoveries(data);
+      setError("");
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Erreur lors du chargement des paiements."
-      );
-      console.error("Fetch recoveries error:", err);
+      setError("Erreur lors du chargement des paiements.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // Charger les paiements au montage du composant
+  // 📌 Création d’un nouveau paiement
+  async function handleCreateSubmit(newRecovery) {
+    try {
+      const created = await recoveryService.createRecovery(newRecovery);
+      setRecoveries((prev) => [...prev, created]);
+    } catch (err) {
+      setError("Erreur lors de la création du paiement.");
+    }
+  }
+
+  // 📌 Suppression d’un paiement
+  async function handleDelete(id) {
+    try {
+      await recoveryService.deleteRecovery(id);
+      setRecoveries((prev) => prev.filter((r) => r._id !== id));
+    } catch (err) {
+      setError("Erreur lors de la suppression du paiement.");
+    }
+  }
+
+  // Charger les données au montage
   useEffect(() => {
     fetchRecoveries();
   }, []);
-
-  // Gère la soumission du formulaire de création
-  const handleCreateSubmit = async (formData) => {
-    setError("");
-    try {
-      await recoveryService.createRecovery(formData);
-      await fetchRecoveries(); // Recharge la liste après la création
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Erreur lors de la création du paiement."
-      );
-      console.error("Create recovery error:", err);
-    }
-  };
-
-  // Gère la suppression d'un paiement (admin only)
-  const handleDelete = async (id) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce paiement ?")) {
-      return;
-    }
-    setError("");
-    try {
-      await recoveryService.deleteRecovery(id);
-      await fetchRecoveries(); // Recharge la liste après la suppression
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Erreur lors de la suppression du paiement."
-      );
-      console.error("Delete recovery error:", err);
-    }
-  };
 
   if (loading)
     return (
@@ -151,10 +121,11 @@ function HomePage() {
         </p>
       </div>
     );
+
   if (error)
     return (
       <div style={styles.container}>
-        <p style={styles.error}>{error}</p>
+        <p style={{ color: "red" }}>{error}</p>
       </div>
     );
 
@@ -180,6 +151,7 @@ function HomePage() {
 
         <hr style={{ margin: "30px 0", borderColor: "var(--border-color)" }} />
 
+        {/* Formulaire d'ajout */}
         <RecoveryForm onSubmit={handleCreateSubmit} />
 
         <hr style={{ margin: "30px 0", borderColor: "var(--border-color)" }} />
@@ -196,9 +168,9 @@ function HomePage() {
                 <th style={styles.th}>KOMPASS ID</th>
                 <th style={styles.th}>Client</th>
                 <th style={styles.th}>Banque</th>
-                <th style={styles.th}>Montant Dû</th>
+                <th style={styles.th}>Montant Dû (Initial)</th>
                 <th style={styles.th}>Montant Payé</th>
-                <th style={styles.th}>Montant Total</th>
+                <th style={styles.th}>Reste à Payer</th>
                 <th style={styles.th}>Agent</th>
                 <th style={styles.th}>Paiement Total</th>
                 <th style={styles.th}>Date Facture</th>
@@ -208,47 +180,67 @@ function HomePage() {
               </tr>
             </thead>
             <tbody>
-              {recoveries.map((recovery) => (
-                <tr key={recovery._id}>
-                  <td style={styles.td}>{recovery.kompassId}</td>
-                  <td style={styles.td}>{recovery.clientName}</td>
-                  <td style={styles.td}>{recovery.bankName}</td>
-                  <td style={styles.td}>{recovery.amountDue}</td>
-                  <td style={styles.td}>{recovery.amountPaid}</td>
-                  <td style={styles.td}>{recovery.paymentTotalAmount}</td>
-                  <td style={styles.td}>{recovery.agentName}</td>
-                  <td style={styles.td}>
-                    {recovery.isFullPayment ? "Oui" : "Non"}
-                  </td>
-                  <td style={styles.td}>
-                    {recovery.invoiceDate
-                      ? new Date(recovery.invoiceDate).toLocaleDateString()
-                      : "N/A"}
-                  </td>
-                  <td style={styles.td}>
-                    {new Date(recovery.paymentDate).toLocaleDateString()}
-                  </td>
-                  <td style={styles.td}>{recovery.editionYear}</td>
-                  {isAdmin && (
+              {recoveries.map((recovery) => {
+                const resteAPayer =
+                  (recovery.amountDue || 0) - (recovery.amountPaid || 0);
+
+                return (
+                  <tr key={recovery._id}>
                     <td style={styles.td}>
-                      <div style={styles.buttonGroup}>
-                        <Link
-                          to={`/edit/${recovery._id}`}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <button style={styles.editButton}>Modifier</button>
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(recovery._id)}
-                          style={styles.deleteButton}
-                        >
-                          Supprimer
-                        </button>
-                      </div>
+                      <Link
+                        to={`/company/${recovery.kompassId}`}
+                        style={{
+                          color: "var(--link-color)",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {recovery.kompassId}
+                      </Link>
                     </td>
-                  )}
-                </tr>
-              ))}
+                    <td style={styles.td}>{recovery.clientName}</td>
+                    <td style={styles.td}>{recovery.bankName}</td>
+                    <td style={styles.td}>{recovery.amountDue}</td>
+                    <td style={styles.td}>{recovery.amountPaid}</td>
+                    <td style={styles.td}>
+                      {resteAPayer > 0
+                        ? `${resteAPayer.toFixed(2)} DA`
+                        : "Payé"}
+                    </td>
+                    <td style={styles.td}>{recovery.agentName}</td>
+                    <td style={styles.td}>
+                      {recovery.isFullPayment ? "Oui" : "Non"}
+                    </td>
+                    <td style={styles.td}>
+                      {recovery.invoiceDate
+                        ? new Date(recovery.invoiceDate).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td style={styles.td}>
+                      {new Date(recovery.paymentDate).toLocaleDateString()}
+                    </td>
+                    <td style={styles.td}>{recovery.editionYear}</td>
+
+                    {isAdmin && (
+                      <td style={styles.td}>
+                        <div style={styles.buttonGroup}>
+                          <Link
+                            to={`/edit/${recovery._id}`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            <button style={styles.editButton}>Modifier</button>
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(recovery._id)}
+                            style={styles.deleteButton}
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

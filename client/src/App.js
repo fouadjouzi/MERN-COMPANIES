@@ -10,7 +10,9 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import HomePage from "./pages/HomePage";
 import AdminDashboard from "./pages/AdminDashboard";
-import EditRecoveryPage from "./pages/EditRecoveryPage"; // Pour la modification d'un paiement
+import EditRecoveryPage from "./pages/EditRecoveryPage";
+import CompanyDashboard from "./pages/CompanyDashboard"; // <-- AJOUTÉ
+import RecoveryDetailPage from "./pages/RecoveryDetailPage"; // <-- AJOUTÉ
 
 // Importations des Composants de Route Protégée/Publique
 import PrivateRoute from "./components/PrivateRoute";
@@ -25,14 +27,9 @@ import "./App.css";
 function App() {
   return (
     <Router>
-      {/* AuthProvider doit envelopper toute l'application pour que le contexte d'authentification soit disponible partout */}
       <AuthProvider>
-        {/* ThemeProvider doit envelopper le contenu de l'application (ou AuthProvider) pour appliquer le thème */}
-        {/* Il est placé ici pour que même la navigation puisse utiliser les variables de thème */}
         <ThemeProvider>
           <div className="App">
-            {" "}
-            {/* La div principale de l'application, pour appliquer des styles généraux si nécessaire */}
             {/* Barre de navigation */}
             <nav
               style={{
@@ -55,9 +52,8 @@ function App() {
               >
                 <li style={{ margin: "0 15px" }}>
                   <Link to="/" style={{ color: "var(--link-color)" }}>
-                    Accueil (Public)
-                  </Link>{" "}
-                  {/* Utilise la variable CSS pour la couleur des liens */}
+                    Accueil & Liste
+                  </Link>
                 </li>
                 <li style={{ margin: "0 15px" }}>
                   <Link to="/login" style={{ color: "var(--link-color)" }}>
@@ -66,12 +62,12 @@ function App() {
                 </li>
                 <li style={{ margin: "0 15px" }}>
                   <Link to="/register" style={{ color: "var(--link-color)" }}>
-                    Inscription (Admin-Only)
+                    Inscription (Admin)
                   </Link>
                 </li>
                 <li style={{ margin: "0 15px" }}>
                   <Link to="/admin" style={{ color: "var(--link-color)" }}>
-                    Admin (Protégé)
+                    Admin Dashboard
                   </Link>
                 </li>
               </ul>
@@ -80,10 +76,9 @@ function App() {
             </nav>
             {/* Définition des Routes de l'application */}
             <Routes>
-              {/* Routes publiques (accessibles à tous, qu'ils soient connectés ou non) */}
+              {/* Routes publiques */}
               <Route path="/" element={<HomePage />} />
-
-              {/* Routes d'authentification (accessibles SEULEMENT si PAS connecté, redirige si déjà connecté) */}
+              {/* Routes d'authentification */}
               <Route
                 path="/login"
                 element={
@@ -92,9 +87,19 @@ function App() {
                   </PublicRoute>
                 }
               />
-
-              {/* Routes protégées (accessibles SEULEMENT si l'utilisateur est authentifié et a le rôle requis) */}
-              {/* Inscription est maintenant protégée pour les admins, car ils gèrent la création de nouveaux utilisateurs */}
+              {/* ROUTE DÉDIÉE AU DASHBOARD ENTREPRISE (Regroupe par KOMPASS ID) */}
+              <Route
+                path="/company/:kompassId"
+                element={<CompanyDashboard />}
+              />{" "}
+              {/* <-- NOUVEAU */}
+              {/* ROUTE DÉTAIL PAIEMENT (Affiche un seul paiement complet) */}
+              <Route
+                path="/recovery/:id"
+                element={<RecoveryDetailPage />}
+              />{" "}
+              {/* <-- NOUVEAU */}
+              {/* Routes protégées (Admin Only) */}
               <Route
                 path="/register"
                 element={
@@ -103,7 +108,6 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              {/* Le tableau de bord Admin est également protégé pour les admins */}
               <Route
                 path="/admin"
                 element={
@@ -112,7 +116,6 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              {/* La page d'édition d'un paiement est protégée pour les admins */}
               <Route
                 path="/edit/:id"
                 element={

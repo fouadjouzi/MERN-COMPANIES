@@ -1,13 +1,14 @@
-import axios from 'axios';
+import axios from "axios";
 
-// URL de base de votre API de recouvrement backend
-const API_URL = 'http://localhost:5000/api/recoveries/';
+// URL de base de l'API (configurable via .env)
+const API_URL = `${
+  process.env.REACT_APP_API_URL || "http://localhost:5000"
+}/api/recoveries/`;
 
-// Fonction pour obtenir le token de l l'utilisateur depuis le localStorage
-// (qui est mis là par AuthContext/authService)
+// Fonction pour obtenir le token utilisateur depuis localStorage
 const getToken = () => {
   try {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem("user"));
     return user ? user.token : null;
   } catch (error) {
     console.error("Failed to parse user from localStorage:", error);
@@ -15,66 +16,83 @@ const getToken = () => {
   }
 };
 
-// Fonction pour créer un nouveau paiement de recouvrement
+// ---------- CRUD OPERATIONS ----------
+
+// Créer un nouveau paiement de recouvrement
 const createRecovery = async (recoveryData) => {
-  const token = getToken();
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      // L'intercepteur Axios dans AuthContext.js gère déjà l'ajout du token
-      // mais cette approche est plus explicite si vous vouliez un contrôle fin ici.
-      // Pour nos besoins actuels, l'intercepteur suffit, mais c'est pour la démonstration.
-      // 'Authorization': token ? `Bearer ${token}` : ''
-    },
-  };
-  // L'intercepteur Axios va ajouter le token si l'utilisateur est connecté.
-  const response = await axios.post(API_URL, recoveryData, config);
-  return response.data;
-};
-
-// Fonction pour obtenir tous les paiements de recouvrement
-const getRecoveries = async (kompassId = null) => {
-  let url = API_URL;
-  if (kompassId) {
-    url += `?kompassId=${kompassId}`; // Ajoute le filtre par kompassId si fourni
+  try {
+    const response = await axios.post(API_URL, recoveryData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data?.message ||
+      "Erreur lors de la création du recouvrement."
+    );
   }
-  const response = await axios.get(url); // Pas besoin de token pour cette route (publique)
-  return response.data;
 };
 
-// Fonction pour obtenir un paiement de recouvrement par son ID MongoDB
+// Récupérer tous les paiements (optionnellement filtrés par kompassId)
+const getRecoveries = async (kompassId = null) => {
+  try {
+    let url = API_URL;
+    if (kompassId) url += `?kompassId=${kompassId}`;
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data?.message ||
+      "Erreur lors du chargement des recouvrements."
+    );
+  }
+};
+
+// Récupérer un paiement par ID
 const getRecoveryById = async (id) => {
-  const response = await axios.get(API_URL + id); // Pas besoin de token pour cette route (publique)
-  return response.data;
+  try {
+    const response = await axios.get(API_URL + id);
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data?.message ||
+      "Erreur lors de la récupération du recouvrement."
+    );
+  }
 };
 
-// Fonction pour mettre à jour un paiement de recouvrement (nécessite token admin)
+// Mettre à jour un paiement (token nécessaire)
 const updateRecovery = async (id, recoveryData) => {
-  const token = getToken(); // Token nécessaire pour cette route protégée
-  if (!token) throw new Error("No token found for update operation. User not authenticated.");
+  const token = getToken();
+  if (!token) throw new Error("Utilisateur non authentifié.");
 
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      // 'Authorization': `Bearer ${token}` // L'intercepteur ajoute déjà ceci
-    },
-  };
-  const response = await axios.put(API_URL + id, recoveryData, config);
-  return response.data;
+  try {
+    const response = await axios.put(API_URL + id, recoveryData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data?.message ||
+      "Erreur lors de la mise à jour du recouvrement."
+    );
+  }
 };
 
-// Fonction pour supprimer un paiement de recouvrement (nécessite token admin)
+// Supprimer un paiement (token nécessaire)
 const deleteRecovery = async (id) => {
-  const token = getToken(); // Token nécessaire pour cette route protégée
-  if (!token) throw new Error("No token found for delete operation. User not authenticated.");
+  const token = getToken();
+  if (!token) throw new Error("Utilisateur non authentifié.");
 
-  const config = {
-    headers: {
-      // 'Authorization': `Bearer ${token}` // L'intercepteur ajoute déjà ceci
-    },
-  };
-  const response = await axios.delete(API_URL + id, config);
-  return response.data;
+  try {
+    const response = await axios.delete(API_URL + id);
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data?.message ||
+      "Erreur lors de la suppression du recouvrement."
+    );
+  }
 };
 
 const recoveryService = {
